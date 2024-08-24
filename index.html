@@ -1,0 +1,127 @@
+<html><head><base href=""><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+<title>Video Player with Bookmarks</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  .bookmark-list {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+</style>
+</head>
+<body class="bg-gray-100 p-8">
+  <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
+    <h1 class="text-3xl font-bold mb-6 text-center">Video Player with Bookmarks</h1>
+    
+    <div class="mb-4">
+      <input type="file" id="videoUpload" accept="video/mp4" class="hidden" />
+      <label for="videoUpload" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded cursor-pointer">
+        Upload Video
+      </label>
+    </div>
+    
+    <div class="flex">
+      <div class="w-3/4 pr-4">
+        <video id="videoPlayer" width="900" height="500" class="w-full bg-black" controls>
+          Your browser does not support the video tag.
+        </video>
+        
+        <div class="mt-4 flex justify-between">
+          <button id="playBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Play</button>
+          <button id="pauseBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">Pause</button>
+          <button id="stopBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Stop</button>
+          <button id="bookmarkBtn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Bookmark</button>
+          <button id="saveBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded">Save Last Bookmark</button>
+        </div>
+      </div>
+      
+      <div class="w-1/4 pl-4">
+        <h2 class="text-xl font-semibold mb-2">Bookmarks</h2>
+        <div id="bookmarkList" class="bookmark-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const videoPlayer = document.getElementById('videoPlayer');
+    const videoUpload = document.getElementById('videoUpload');
+    const playBtn = document.getElementById('playBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const bookmarkBtn = document.getElementById('bookmarkBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const bookmarkList = document.getElementById('bookmarkList');
+
+    let bookmarks = [];
+    let fileName = '';
+
+    videoUpload.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      fileName = file.name;
+      const videoURL = URL.createObjectURL(file);
+      videoPlayer.src = videoURL;
+    });
+
+    playBtn.addEventListener('click', () => videoPlayer.play());
+    pauseBtn.addEventListener('click', () => videoPlayer.pause());
+    stopBtn.addEventListener('click', () => {
+      videoPlayer.pause();
+      videoPlayer.currentTime = 0;
+    });
+
+    bookmarkBtn.addEventListener('click', () => {
+      const time = videoPlayer.currentTime;
+      bookmarks.push(time);
+      updateBookmarkList();
+    });
+
+    function updateBookmarkList() {
+      bookmarkList.innerHTML = '';
+      bookmarks.forEach((time, index) => {
+        const bookmarkElement = document.createElement('div');
+        bookmarkElement.className = 'mb-2';
+        bookmarkElement.innerHTML = `
+          <button class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-2 rounded text-sm w-full text-left">
+            Bookmark ${index + 1}: ${formatTime(time)}
+          </button>
+        `;
+        bookmarkElement.querySelector('button').addEventListener('click', () => {
+          videoPlayer.currentTime = time;
+          videoPlayer.play();
+        });
+        bookmarkList.appendChild(bookmarkElement);
+      });
+    }
+
+    function formatTime(seconds) {
+      const date = new Date(null);
+      date.setSeconds(seconds);
+      return date.toISOString().substr(11, 8);
+    }
+
+    saveBtn.addEventListener('click', () => {
+      if (bookmarks.length === 0) {
+        alert('No bookmarks to save!');
+        return;
+      }
+
+      const lastBookmark = bookmarks[bookmarks.length - 1];
+      const content = `Last bookmark time: ${formatTime(lastBookmark)}`;
+      
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      
+      const now = new Date();
+      const timestamp = now.toISOString().replace(/:/g, '-').replace(/\..+/, '');
+      const saveFileName = `${fileName.replace(/\.[^/.]+$/, '')}_bookmark_${timestamp}.txt`;
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = saveFileName;
+      link.click();
+      
+      URL.revokeObjectURL(url);
+    });
+
+  </script>
+</body></html>
